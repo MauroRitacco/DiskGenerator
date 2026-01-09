@@ -1,0 +1,57 @@
+2026-01-09 18:24:00	INFO	::casa	
+2026-01-09 18:24:00	INFO	::casa	Python version 3.10.19
+2026-01-09 18:24:00	INFO	::casa	CASA Version PIPELINE 6.6.0.20
+2026-01-09 18:24:00	INFO	NewMSSimulator::initAnt() 	Using global coordinates for the antennas
+2026-01-09 18:24:00	INFO	NewMSSimulator::initAnt() 	Added rows to ANTENNA table
+2026-01-09 18:24:00	INFO	MSsimulator::initFeeds() 	Added rows to FEED table
+2026-01-09 18:24:00	INFO	simulator::settimes()	Times 
+2026-01-09 18:24:00	INFO	simulator::settimes()+	     Integration time 30s
+2026-01-09 18:24:00	INFO	simulator::settimes()	     Times will be interpreted as hour angles for first source
+2026-01-09 18:24:00	INFO	MSsimulator::initSpWindows() 	Creating new spectral window 00, ID 1
+2026-01-09 18:24:00	INFO	NewMSSimulator::observe()	First source: 00 @ 02:37:00.00   +46.18.00.00       J2000
+2026-01-09 18:24:00	INFO	NewMSSimulator::observe()+	Full time range: 08-Jan-2026/21:35:20.9 -- 09-Jan-2026/07:35:56.9 TAI with int = 30
+2026-01-09 18:24:00	INFO	NewMSSimulator::observe()	Calculating a total of 1201 integrations
+2026-01-09 18:24:04	INFO	Simulator::reset() 	Resetting all visibility corruption components
+2026-01-09 18:24:04	INFO	Simulator::reset() 	Reset all image-plane corruption components
+2026-01-09 18:24:04	INFO	NewMSSimulator::initAnt() 	Using global coordinates for the antennas
+2026-01-09 18:24:04	INFO	NewMSSimulator::initAnt() 	Added rows to ANTENNA table
+2026-01-09 18:24:04	INFO	MSsimulator::initFeeds() 	Added rows to FEED table
+2026-01-09 18:24:04	INFO	simulator::settimes()	Times 
+2026-01-09 18:24:04	INFO	simulator::settimes()+	     Integration time 30s
+2026-01-09 18:24:04	INFO	simulator::settimes()	     Times will be interpreted as hour angles for first source
+2026-01-09 18:24:04	INFO	MSsimulator::initSpWindows() 	Creating new spectral window 00, ID 1
+2026-01-09 18:24:04	INFO	NewMSSimulator::observe()	First source: 00 @ 02:37:00.00   +46.18.00.00       J2000
+2026-01-09 18:24:04	INFO	NewMSSimulator::observe()+	Full time range: 09-Jan-2026/01:34:23.7 -- 09-Jan-2026/03:36:54.1 TAI with int = 30
+2026-01-09 18:24:04	INFO	NewMSSimulator::observe()	Calculating a total of 245 integrations
+2026-01-09 18:24:05	INFO	Simulator::reset() 	Resetting all visibility corruption components
+2026-01-09 18:24:05	INFO	Simulator::reset() 	Reset all image-plane corruption components
+2026-01-09 18:24:05	INFO	concat::::casa	##########################################
+2026-01-09 18:24:05	INFO	concat::::casa	##### Begin Task: concat             #####
+2026-01-09 18:24:05	INFO	concat::::casa	concat( vis=['/home/mauro/PycharmProjects/DiskGenerator/utils/ri_measurement_operator/pyutils/vla_sims/ms/vlaa_id_0_dec_46_dta_10.00.MS', '/home/mauro/PycharmProjects/DiskGenerator/utils/ri_measurement_operator/pyutils/vla_sims/ms/vlac_id_0_dec_46_dtc_2.03.MS'], concatvis='/home/mauro/PycharmProjects/DiskGenerator/utils/ri_measurement_operator/pyutils/vla_sims/ms/vla_0000.MS', freqtol='', dirtol='', respectname=False, timesort=False, copypointing=True, visweightscale=[], forcesingleephemfield='' )
+2026-01-09 18:24:05	INFO	concat::::casa	Checking MS setup consistency ...
+2026-01-09 18:24:05	INFO	concat::::casa	Checking for unpopulated POINTING table in first MS ...
+2026-01-09 18:24:05	INFO	concat::::casa	Checking for unpopulated optional Main Table columns in first MS ...
+2026-01-09 18:24:05	INFO	concat::::casa	Checking for unpopulated POINTING table ...
+2026-01-09 18:24:05	INFO	concat::::casa	Checking for unpopulated optional Main Table columns ...
+2026-01-09 18:24:05	INFO	concat::::casa	Checking order of MS list ...
+2026-01-09 18:24:05	INFO	concat::::casa	copying /home/mauro/PycharmProjects/DiskGenerator/utils/ri_measurement_operator/pyutils/vla_sims/ms/vlaa_id_0_dec_46_dta_10.00.MS to /home/mauro/PycharmProjects/DiskGenerator/utils/ri_measurement_operator/pyutils/vla_sims/ms/vla_0000.MS
+2026-01-09 18:24:05	INFO	concat::::casa	concatenating /home/mauro/PycharmProjects/DiskGenerator/utils/ri_measurement_operator/pyutils/vla_sims/ms/vlac_id_0_dec_46_dtc_2.03.MS into /home/mauro/PycharmProjects/DiskGenerator/utils/ri_measurement_operator/pyutils/vla_sims/ms/vla_0000.MS
+2026-01-09 18:24:05	INFO	MSConcat::concatenate 	Appending /home/mauro/PycharmProjects/DiskGenerator/utils/ri_measurement_operator/pyutils/vla_sims/ms/vlac_id_0_dec_46_dtc_2.03.MS to /home/mauro/PycharmProjects/DiskGenerator/utils/ri_measurement_operator/pyutils/vla_sims/ms/vla_0000.MS
+2026-01-09 18:24:05	INFO	MSConcat::concatenate 	Added 0 rows and matched 1 from the state subtable
+2026-01-09 18:24:05	INFO	MSConcat::concatenate 	Added 1 rows to the source subtable
+2026-01-09 18:24:05	INFO	MSConcat::concatenate 	Added 0 rows and matched 1 from the data description subtable
+2026-01-09 18:24:05	INFO	MSConcat::concatenate 	Added 0 rows and matched 1 from the spectral window subtable
+2026-01-09 18:24:05	INFO	MSConcat::concatenate 	Removed 1 redundant rows from the source subtable
+2026-01-09 18:24:05	INFO	MSConcat::concatenate 	Added 0 rows and matched 27 from the antenna subtable
+2026-01-09 18:24:05	INFO	MSConcat::concatenate +	Added 0 rows to the feed subtable
+2026-01-09 18:24:05	INFO	MSConcat::concatenate +	Added 0 rows and matched 1 from the field subtable
+2026-01-09 18:24:05	INFO	MSConcat::copyObservation	Added 1 rows and matched 0 rows in the observation subtable.
+2026-01-09 18:24:05	INFO	MSConcat::copyProcessor	Added 0 rows and matched 0 rows in the processor subtable.
+2026-01-09 18:24:05	INFO	MSConcat::copySysCal	No valid syscal tables present. Result won't have one either.
+2026-01-09 18:24:05	INFO	MSConcat::copyWeather	No valid weather tables present. Result won't have one either.
+2026-01-09 18:24:05	INFO	MSConcat::copyGainCurve	No valid gain curve tables present. Result won't have one either.
+2026-01-09 18:24:05	INFO	MSConcat::copyPhaseCal	No valid gain curve tables present. Result won't have one either.
+2026-01-09 18:24:05	INFO	MSConcat::concatenate 	Will offset scan numbers by 1 for observations with Obs ID 1 in order to make scan numbers unique.
+2026-01-09 18:24:06	INFO	concat::::casa	Task concat complete. Start time: 2026-01-09 15:24:05.160913 End time: 2026-01-09 15:24:06.315564
+2026-01-09 18:24:06	INFO	concat::::casa	##### End Task: concat               #####
+2026-01-09 18:24:06	INFO	concat::::casa	##########################################

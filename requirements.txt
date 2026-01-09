@@ -1,5 +1,5 @@
 # --- Core Science ---
-numpy==2.2.6
+numpy==1.26.4
 scipy==1.15.3
 astropy==6.1.7
 matplotlib==3.10.8
@@ -10,6 +10,6 @@ casatools==6.6.0.20
 casatasks==6.6.0.20
 simms==2.0.1
 
-# --- AI & Transforms ---
+# --- Tensors ---
 torch==2.9.1
-torchkbnufft==1.5.2
+torchkbnufft

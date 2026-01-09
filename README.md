@@ -25,7 +25,7 @@ It relies on a combination of custom Python scripts for the physics of the disks
 Since all dependencies are included directly in the repository, you can simply clone it:
 
 ```bash
-git clone https://github.com/your-username/thesis-interferometry-sim.git
+git clone https://github.com/MauroRitacco/DiskGenerator.git
 ```
 
 ### Environment

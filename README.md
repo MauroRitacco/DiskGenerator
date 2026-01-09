@@ -22,23 +22,19 @@ It relies on a combination of custom Python scripts for the physics of the disks
 
 ### Cloning
 
+I recommend setting up a fresh virtual environment with Python 3.10.
+
 Since all dependencies are included directly in the repository, you can simply clone it:
 
 ```bash
 git clone https://github.com/MauroRitacco/DiskGenerator.git
 ```
 
-### Environment
-
-I recommend setting up a fresh virtual environment (Python 3.10 or higher).
-
 **Install the dependencies:**
 ```bash
 cd DiskGenerator
 pip install -r requirements.txt
 ```
-
-**Important Note on OS:** This project relies on `casatools` and `casatasks` for handling MS files.
 
 ## Workflow
 

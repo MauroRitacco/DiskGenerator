@@ -34,6 +34,7 @@ I recommend setting up a fresh virtual environment (Python 3.10 or higher).
 
 **Install the dependencies:**
 ```bash
+cd DiskGenerator
 pip install -r requirements.txt
 ```
 

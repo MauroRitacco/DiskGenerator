@@ -1,0 +1,7 @@
+num_iter: 1
+ckpt_path: "./"
+output_path: "./pipeline/training/"
+data_file: "./pipeline/measurements/measurement_0001.mat"
+meas_op_on_gpu: false
+nufft_pkg: "tkbn"
+super_resolution: 1.0

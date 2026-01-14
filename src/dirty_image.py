@@ -10,7 +10,7 @@ BASE_DIR = Path(os.getcwd()).absolute()
 sys.path.insert(0, str(BASE_DIR))
 sys.path.insert(0, str(BASE_DIR / "utils"))
 
-# Directories (Solo las de entrada son fijas, la de salida depende del config)
+# Directories (Input directories are fixed, output depends on config)
 DIR_MEASUREMENTS = BASE_DIR / "pipeline" / "measurements"
 
 # Import tools from your local files
@@ -22,21 +22,21 @@ def generate_training_data():
     Generates normalized dirty images and initial reconstructions.
     Output location is defined by 'output_path' in config.yaml.
     """
-    # Load arguments (incluyendo output_path del yaml)
+    # Load arguments (including output_path from yaml)
     args = parse_args_imaging()
 
-    # --- CONFIGURACIÓN DE RUTAS DE SALIDA ---
-    # Usamos args.output_path definido en tu YAML
-    # Convertimos a Path absoluto para evitar ambigüedades
+    # --- OUTPUT PATH CONFIGURATION ---
+    # Use args.output_path defined in your YAML
+    # Convert to absolute Path to avoid ambiguities
     output_root = Path(args.output_path).resolve()
 
     print(f"INFO: Output Directory set to: {output_root}")
 
-    # --- DEFINICIÓN DE EXTENSIONES ---
-    RES_EXT = "_resN1"  # Sufijo carpeta residuos
-    REC_EXT = "_recN1"  # Sufijo carpeta reconstrucciones
-    DIRTY_FILE_EXT = "_dirty"  # Sufijo archivo dirty
-    REC_FILE_EXT = "_rec"  # Sufijo archivo rec
+    # --- EXTENSION DEFINITIONS ---
+    RES_EXT = "_resN1"  # Residuals folder suffix
+    REC_EXT = "_recN1"  # Reconstructions folder suffix
+    DIRTY_FILE_EXT = "_dirty"  # Dirty file suffix
+    REC_FILE_EXT = "_rec"  # Reconstruction file suffix
 
     # Create output folders inside the output_path defined in yaml
     dir_res = output_root / f"ground_truth{RES_EXT}"
@@ -67,7 +67,7 @@ def generate_training_data():
             print(f"Skipping {mat_path.name}: {e}")
             continue
 
-        # Instantiate the Measurement Operator (Phi)
+        # Instantiate the Measurement Operator
         meas_op = create_meas_op(args=args, data=data, device=args.device)
 
         with torch.no_grad():
@@ -84,11 +84,11 @@ def generate_training_data():
         base_id = mat_path.stem.split("_")[-1]
         clean_fname = f"disk_{base_id}"
 
-        # 1. Save Residual (Dirty Image)
+        # Save Residual (Dirty Image)
         res_name = f"{clean_fname}{DIRTY_FILE_EXT}.fits"
         fits.writeto(dir_res / res_name, dirty_norm, overwrite=True)
 
-        # 2. Save Initial Reconstruction (Zeros)
+        # Save Initial Reconstruction (Zeros)
         rec_zeros = np.zeros_like(dirty_norm)
         rec_name = f"{clean_fname}{REC_FILE_EXT}.fits"
         fits.writeto(dir_rec / rec_name, rec_zeros, overwrite=True)

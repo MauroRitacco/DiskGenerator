@@ -3,7 +3,7 @@ Pipeline Step 1 & 2: Dataset Generation
 --------------------------------------
 1. Generates Ground Truth (GT) disk images using the DiskGenerator.
 2. Runs the VLA simulation script to create UV coverage patterns (.mat files).
-3. Organizes output into a clean 'pipeline' directory for training.
+3. Organizes output into 'pipeline' directory.
 """
 
 import os
@@ -44,7 +44,7 @@ IMG_SIZE = 512
 
 
 def step_1_generate_gt():
-    #Create the synthetic disk images (Ground Truth)
+    # Create the synthetic disk images (Ground Truth)
     print(f"Step 1: Generating {NUM_SAMPLES} disks...")
 
     if not GT_DIR.exists():

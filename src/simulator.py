@@ -7,7 +7,7 @@ from math import *
 from scipy.io import loadmat, savemat
 from astropy.io import fits
 
-# 1. Paths
+# Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 RI_OP_DIR = BASE_DIR / "utils" / "ri_measurement_operator"
 sys.path.insert(0, str(RI_OP_DIR))
@@ -46,9 +46,7 @@ def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(51
                               img_size=img_size,
                               image_pixel_size=image_pixel_size)
 
-    # FIX: Scale the UVW coordinates from meters to wavelengths
-    # The IO loader treated them as radians/unitless, but the file contained meters.
-    data["u"] /= wavelength
+     data["u"] /= wavelength
     data["v"] /= wavelength
     data["w"] /= wavelength
 

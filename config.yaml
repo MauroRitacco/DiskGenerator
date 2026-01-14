@@ -1,7 +1,7 @@
 num_iter: 1
 ckpt_path: "./"
 output_path: "./pipeline/"
-data_file: "./pipeline/measurements/measurement_0001.mat"
+data_file: "./pipeline/measurements/measurement_0000.mat" # necessary for initializing dirty_image.py, but it runs on every file in the directory
 meas_op_on_gpu: false
 nufft_pkg: "tkbn"
 super_resolution: 1.0

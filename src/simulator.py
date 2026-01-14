@@ -46,7 +46,7 @@ def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(51
                               img_size=img_size,
                               image_pixel_size=image_pixel_size)
 
-     data["u"] /= wavelength
+    data["u"] /= wavelength
     data["v"] /= wavelength
     data["w"] /= wavelength
 

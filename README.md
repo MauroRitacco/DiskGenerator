@@ -16,7 +16,7 @@ It relies on a combination of custom Python scripts for the physics of the disks
 * **src/sim_vla_ms.py**: A utility script that generates empty Measurement Sets (MS) reflecting specific VLA antenna configurations (A and C).
 * **src/disk_and_baseline_dist_generator.py**: The orchestrator for the first stage. It calls the two scripts above to create the ground truth and the corresponding UV coverage.
 * **src/simulator.py**: The second stage. It takes the images and the empty MS files and computes the complex visibilities using a simulation operator.
-* **utils/ri_measurement_operator**: Contains the measurement operator tools (adapted from R2D2/BASPLib) required to simulate the telescope observations.
+* **src/dirty_image.py**: The final stage. It reads the visibilities and generates the "dirty images" (inverse Fourier transform with zeroes filled for missing data) and prepares the folder structure for training the R2D2 network.
 
 ## Installation
 
@@ -51,7 +51,14 @@ python src/disk_and_baseline_dist_generator.py
 Once the files from Step 1 are ready, run the simulator. This script applies the measurement operator (located in `utils/`) to transform the image data into visibility data, populating the MS files.
 
 ```bash
-python simulator.py
+python src/simulator.py
+```
+
+**Step 3: Generate Dirty Images & Training Data**
+Finally, run the dirty image generator. This script reconstructs the "dirty images" from the simulated visibilities. These images serve as the input for the R2D2 network training, while the ground truth from Step 1 serves as the target.
+
+```bash
+python src/dirty_image.py --config config.yaml
 ```
 
 ## Acknowledgements

@@ -39,7 +39,7 @@ except ImportError as e:
     sys.exit(1)
 
 # Config
-NUM_SAMPLES = 2
+NUM_SAMPLES = 5
 IMG_SIZE = 512
 
 

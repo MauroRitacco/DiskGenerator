@@ -20,7 +20,6 @@ def generate_disk(output_dir, num_samples=50, img_size=512):
         os.makedirs(output_dir)
 
     print(f"Generating {num_samples} disks in '{output_dir}'...")
-
     # Grid setup
     x = np.linspace(-img_size / 2, img_size / 2, img_size)
     y = np.linspace(-img_size / 2, img_size / 2, img_size)

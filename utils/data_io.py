@@ -47,7 +47,7 @@ def read_fits_as_tensor(path):
 
 def load_data_to_tensor(
     uv_file_path: str,
-    super_resolution: float = 1.5,
+    super_resolution: float = 1,
     image_pixel_size: float = None,
     data_weighting: bool = True,
     load_time: bool = False,

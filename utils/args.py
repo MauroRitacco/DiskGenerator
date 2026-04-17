@@ -146,7 +146,7 @@ class CommonArgs(BaseModel):
 
     # measurement operator
     nufft_pkg: NufftPkgEnum = NufftPkgEnum.finufft
-    super_resolution: float = 1.5
+    super_resolution: float = 1
     image_pixel_size: float = None
     nufft_oversampling_factor: float = 2.0
     nufft_kernel_dim: int = 7

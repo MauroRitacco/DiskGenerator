@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     data_radian = load_data_to_tensor(
         uv_file_path="data/test.mat",
-        super_resolution=1.5,
+        super_resolution=1,
         data_weighting=False,
         img_size=img_size,
         uv_unit="radians",
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     )
     data_lam = load_data_to_tensor(
         uv_file_path="data/test.mat",
-        super_resolution=1.5,
+        super_resolution=1,
         data_weighting=False,
         img_size=img_size,
         uv_unit="wavelength",

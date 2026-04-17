@@ -1,5 +1,8 @@
 import os
 import sys
+import argparse
+import gc
+import resource
 import torch
 import numpy as np
 from pathlib import Path
@@ -12,17 +15,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 RI_OP_DIR = BASE_DIR / "utils" / "ri_measurement_operator"
 sys.path.insert(0, str(RI_OP_DIR))
 
-DIR_GT = BASE_DIR / "pipeline" / "ground_truth"
-DIR_UV = BASE_DIR / "pipeline" / "uv_patterns"
-DIR_OUT = BASE_DIR / "pipeline" / "measurements"
-os.makedirs(DIR_OUT, exist_ok=True)
 
 
 from pysrc.utils.io import load_data_to_tensor
 from pysrc.utils.gen_imaging_weights import gen_imaging_weights
 
+def log_memory():
+    usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    # Linux returns kb, macOS returns bytes. Assuming Linux based on environment.
+    print(f"Memory usage: {usage / 1024:.2f} MB")
 
-def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(512,512),nufft_pkg='tkbn'):
+
+def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(128,128),nufft_pkg='tkbn', iSNR=40):
     # Define u, v, w, y uv parameters from uv path
     uv = loadmat(uv_path, variable_names=["u", "v", "w", "frequency","nominal_pixelsize"])
 
@@ -75,15 +79,16 @@ def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(51
     # Define gdth from ground truth images and convert it into tensor
     gdth=fits.getdata(gdth_path)
     gdth = torch.tensor(gdth.astype(float), dtype=torch.float64).view(1, 1, *gdth.shape)
-    y_clean = meas_op.forward_op(gdth)
+    
+    with torch.no_grad():
+        y_clean = meas_op.forward_op(gdth)
 
-    # Input random Gaussian noise
-    iSNR = 40  # input SNR defined by user
-    M = y_clean.numel()
-    tau = 10 ** (-iSNR / 20) * torch.linalg.norm(y_clean, dtype=torch.complex128) / sqrt(M)  # Calculate tau
-    noise = (torch.randn(M) + 1j * torch.randn(M)) / sqrt(2)  # Random Gaussian noise with std tau and mean 0
-    # Define y as y clean plus noise
-    y = y_clean + noise
+        # Input random Gaussian noise
+        M = y_clean.numel()
+        tau = 10 ** (-iSNR / 20) * torch.linalg.norm(y_clean, dtype=torch.complex128) / sqrt(M)  # Calculate tau
+        noise = (torch.randn(M) + 1j * torch.randn(M)) / sqrt(2)  # Random Gaussian noise with std tau and mean 0
+        # Define y as y clean plus noise
+        y = y_clean + noise
 
     # Save visibilities
     nW = torch.ones(M) / tau  # The inverse of the noise std
@@ -97,8 +102,62 @@ def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(51
         "frequency": frequency.item(),
         "nominal_pixelsize": image_pixel_size,
     })
+    
+    # Explicit garbage flushing inside the function scope
+    del meas_op, data, gdth, y_clean, y, noise, u, v, w, nW
+    gc.collect()
 
-# Run the simulator for all the files in the respective folders
-for i in range(len([f for f in DIR_GT.glob("*") if f.is_file()])):
-    simulator(DIR_UV / f"uv_{i:04d}.mat",DIR_GT /f"disk_{i:04d}.fits",
-              DIR_OUT / f"measurement_{i:04d}.mat")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Simulator for DiskGenerator")
+    parser.add_argument("--uv_dir", type=str, required=True, help="Directory containing UV patterns")
+    parser.add_argument("--gt_dir", type=str, required=True, help="Directory containing ground truth fits files")
+    parser.add_argument("--out_dir", type=str, required=True, help="Directory to save measurement files")
+    parser.add_argument("--super_resolution", type=int, default=1, help="Super resolution factor")
+    parser.add_argument("--img_size", type=int, default=128, help="Image size (assumed square)")
+    parser.add_argument("--nufft_pkg", type=str, default="tkbn", choices=["finufft", "tkbn", "pynufft"], help="NUFFT package to use")
+    parser.add_argument("--isnr", type=float, default=40.0, help="Input Signal-to-Noise Ratio")
+    parser.add_argument("--generate_validation", type=bool, default=False, help="Generate validation data")
+    args = parser.parse_args()
+
+    uv_dir = Path(args.uv_dir)
+    gt_dir = Path(args.gt_dir)
+    out_dir = Path(args.out_dir)
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Run the simulator for all the files in the respective folders
+    uv_files = sorted(uv_dir.glob("uv_*.mat"))
+    for uv_file in uv_files:
+        # Extract index from filename, e.g., "uv_1234.mat" -> 1234
+        try:
+            i = int(uv_file.stem.split('_')[1])
+        except (IndexError, ValueError):
+            print(f"Skipping file with unexpected name format: {uv_file.name}")
+            continue
+
+        if args.generate_validation:
+            gdth_file = gt_dir / f"val_disk_{i:04d}.fits"
+        else:
+            gdth_file = gt_dir / f"disk_{i:04d}.fits"
+
+        if not gdth_file.exists():
+            print(f"Warning: Ground truth file not found for index {i}: {gdth_file}")
+            continue
+
+        if args.generate_validation:
+            simulator(uv_file, gdth_file, out_dir / f"val_disk_{i:04d}.mat",
+                      super_resolution=args.super_resolution,
+                      img_size=(args.img_size, args.img_size),
+                      nufft_pkg=args.nufft_pkg,
+                      iSNR=args.isnr)
+        else:
+            simulator(uv_file, gdth_file, out_dir / f"disk_{i:04d}.mat",
+                      super_resolution=args.super_resolution,
+                      img_size=(args.img_size, args.img_size),
+                      nufft_pkg=args.nufft_pkg,
+                      iSNR=args.isnr)
+        
+        # Explicit garbage collection to prevent memory leaks
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        log_memory()

@@ -87,8 +87,8 @@ class DataTransform_N1:
     def __call__(self, target, dirty, PSF, fname, slice, a_expo):
         dirty = to_tensor(dirty.astype(np.float32))
         target = to_tensor(target.astype(np.float32))
-        dirty_n, mean = normalize_instance(dirty, eps=1e-110)
-        target_n = normalize(target, mean, eps=1e-110)
+        dirty_n, mean = normalize_instance(dirty, eps=1e-8)
+        target_n = normalize(target, mean, eps=1e-8)
         a_expo = torch.tensor(np.array([a_expo]).astype(np.float32))
         if type(PSF) is not float:
             PSF = to_tensor(PSF.astype(np.float32))
@@ -107,9 +107,9 @@ class DataTransform_Ni:
         res = to_tensor(res.astype(np.float32))
         target = to_tensor(target.astype(np.float32))
 
-        rec_n, mean = normalize_instance(rec, eps=1e-110)
-        target_n = normalize(target, mean, eps=1e-110)
-        res_n = normalize(res, mean, eps=1e-110)
+        rec_n, mean = normalize_instance(rec, eps=1e-8)
+        target_n = normalize(target, mean, eps=1e-8)
+        res_n = normalize(res, mean, eps=1e-8)
         a_expo = torch.tensor(np.array([a_expo]).astype(np.float32))
         if type(PSF) is not float:
             PSF = to_tensor(PSF.astype(np.float32))

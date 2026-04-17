@@ -2,7 +2,7 @@ data_file: ./data/test.mat
 nufft_pkg: finufft
 im_dim_x: 512
 im_dim_y: 512
-super_resolution: 1.5
+super_resolution: 1
 data_weighting: False
 meas_op_on_gpu: True
 nufft_oversampling_factor: 2.0

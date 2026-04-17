@@ -6,9 +6,8 @@ import matplotlib.cbook
 try:
     from matplotlib import MatplotlibDeprecationWarning
 except ImportError:
-    pass # Si no existe, no hacemos nada o usamos Warning genérico
+    pass 
 
-# Si cbook no tiene la advertencia (Matplotlib 3.6+), se la inyectamos a la fuerza
 if not hasattr(matplotlib.cbook, "MatplotlibDeprecationWarning"):
     matplotlib.cbook.MatplotlibDeprecationWarning = DeprecationWarning
 
@@ -28,7 +27,18 @@ import matplotlib.pyplot as plt
 c = 299792458  # Speed of light
 
 # set dirs
-mydir = os.getcwd()
+# capture the folder where this script lives to find antenna config files
+script_dir = os.path.dirname(os.path.abspath(__file__))
+## user-input
+parser = argparse.ArgumentParser()
+parser.add_argument('-n', '--npatterns', default=1)
+parser.add_argument('--start_id', default=0, help="Starting ID for the generated files")
+# custom output directory (defaults to current working directory)
+parser.add_argument('--outdir', default=os.getcwd(), help="Output directory")
+args = parser.parse_args()
+
+# use the specified outdir for all data generation
+mydir = args.outdir
 vlasimsdir = mydir + "/vla_sims/"
 os.system("mkdir %s" % vlasimsdir)
 msdir = vlasimsdir + "ms/"
@@ -38,18 +48,14 @@ os.system("mkdir %s" % uvdir)
 pngdir = vlasimsdir + "png/"
 os.system("mkdir %s" % pngdir)
 
-## user-input
-parser = argparse.ArgumentParser()
-parser.add_argument('-n', '--npatterns', default=1)
-args = parser.parse_args()
-
 def main():
     # number of sampling patterns & MS tables to generate
     print('############# User-input:')
     npatterns = int(args.npatterns)
     print('Number of requested Fourier sampling patterns: %s' % npatterns)
+    start_id = int(args.start_id)
     # generate sampling patterns aka uvw-coverages & related info
-    for i in range(npatterns):
+    for i in range(start_id, start_id + npatterns):
         start = timeit.default_timer()
         print('############# Fourier sampling pattern id: %s' % i)
 
@@ -68,14 +74,21 @@ def main():
         msdec = str(dec_deg) + "d" + str(dec_min) + "m0s"
         print("info: (param) DEC: %s" % msdec)
 
-        ## time specs
-        dta_min = 5  # A config: min total observation time
-        dta = 10 #np.random.uniform(5, 5 + dta_min)  # A config: total observation time in [5,10]
+        ## time specs (SPARSE MASK)
+        # 75% chance for a severe/sparse observation, 25% chance for a clean/dense observation
+        if np.random.rand() < 0.75:
+            # BAD / MODERATE OBSERVATION (Heavy to Moderate Artifacts)
+            dta = np.random.uniform(0.5, 2.0)  # A config: short to medium observation
+            dtc = np.random.uniform(0.1, 0.5)  # C config: short to medium observation
+            dt_step = int(np.random.choice([120, 240, 300]))  # Moderate to huge snapshot gaps
+        else:
+            # GOOD OBSERVATION (Clean / Low Artifacts)
+            dta = np.random.uniform(2.0, 8.0)  # A config: long, dense tracking
+            dtc = np.random.uniform(0.5, 2.0)  # C config: long, dense tracking
+            dt_step = int(np.random.choice([30, 60]))  # Tight snapshot gaps
+            
         print("info: (param) obs. time with config A of freqs: %.2f h" % dta)
-        dtc_min = 1  # C  config: min total observation time
-        dtc = np.random.uniform() * 2 + dtc_min  # C config: total observation time in [1,3]
         print("info: (param) obs. time with config C of freqs: %.2f h" % dtc)
-        dt_step = 30  # integration time/ time-step (fixed but could be random)
         print("info: (param) time step: %.2f sec" % dt_step)
         ## freq specs
         freq0 = 1e9  # starting freq.
@@ -134,14 +147,15 @@ def main():
         print("CASA:start ----------------------------")
         print('##### Create empty MS .. A config')
         # A config
-        simms.create_empty_ms(msname=mymsfile_a, tel='vla', pos="%s/observatories/vlaa.itrf.txt" % mydir,
+        # Use script_dir to locate the antenna configuration regardless of where the script is run from
+        simms.create_empty_ms(msname=mymsfile_a, tel='vla', pos="%s/observatories/vlaa.itrf.txt" % script_dir,
                               pos_type='ascii', coords="itrf",
                               synthesis=dta, dtime=dt_step, dfreq=msdfreq, freq0=msfreq0, nchan=str(nfreqs),
                               ra=msra, dec=msdec, scan_length=[dta + 0.01], scan_lag=0,
                               stokes="XX YY", setlimits=True, optimise_start=True)
         # C config
         print('##### Create empty MS .. C config')
-        simms.create_empty_ms(msname=mymsfile_c, tel='vla', pos="%s/observatories/vlaa.itrf.txt" % mydir,
+        simms.create_empty_ms(msname=mymsfile_c, tel='vla', pos="%s/observatories/vlaa.itrf.txt" % script_dir,
                               pos_type='ascii', coords="itrf",
                               synthesis=dtc, dtime=dt_step, dfreq=msdfreq, freq0=msfreq0, nchan=str(nfreqs),
                               ra=msra, dec=msdec, scan_length=[dtc + 0.01], scan_lag=0,

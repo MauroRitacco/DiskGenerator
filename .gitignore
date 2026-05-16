@@ -2,3 +2,4 @@ pipeline/
 .venv/
 __pycache__/
 *.pyc
+casa-*.log

@@ -6,11 +6,11 @@ set -e
 # Path to the virtual environment python
 PYTHON=".venv/bin/python"
 #Number of samples
-n=100
+n=5
 #Image size
 img_size=64
 #Path to the output directory
-OUTDIR="pipeline"
+OUTDIR="pipeline/benchmark"
 
 echo "--------------------------------------------------"
 echo "Starting DiskGenerator Pipeline..."
@@ -25,13 +25,12 @@ $PYTHON utils/ri_measurement_operator/pyutils/sim_vla_ms.py \
     --n $n
 
 rm -r ${OUTDIR}/vla_sims/png
-# rm -r ${OUTDIR}/vla_sims/ms
 mv ${OUTDIR}/vla_sims/uvw ${OUTDIR}/ && mv ${OUTDIR}/vla_sims/ms ${OUTDIR}/ && rmdir ${OUTDIR}/vla_sims
 
 # Step 2: Disk Generator
 echo "[2/5] Generating disks..."
 $PYTHON src/disk_generator.py \
-    --output_dir ${OUTDIR}/dataset/trainingset \
+    --output_dir ${OUTDIR}/groundtruth \
     --num_samples $n \
     --img_size $img_size
 
@@ -39,22 +38,12 @@ $PYTHON src/disk_generator.py \
 echo "[3/5] Simulating visibilities..."
 $PYTHON src/simulator.py \
     --uv_dir ${OUTDIR}/uvw \
-    --gt_dir ${OUTDIR}/dataset/trainingset \
-    --out_dir ${OUTDIR}/dataset/measurements \
+    --gt_dir ${OUTDIR}/groundtruth \
+    --out_dir ${OUTDIR}/measurements_mat \
     --img_size $img_size
 
-# Step 4: Dirty image generation (initial residual) and save initial reconstruction (zeros)
-echo "[4/5] Generating dirty image (initial residual) and save initial reconstruction (zeros)..."
-$PYTHON src/dirty_image.py \
-    --config config.yaml \
-    --data_file ${OUTDIR}/dataset/measurements/dummy.mat \
-    --output_path ${OUTDIR}/dataset/iteration_1 \
-    --img_size $img_size
+$PYTHON -c "import src.ms_to_mat; [src.ms_to_mat.copyVisibilitiesToData(f'${OUTDIR}/ms/vla_{i:04d}.MS', f'${OUTDIR}/measurements_mat/disk_{i:04d}.mat') for i in range($n)]"
 
-# Step 5: Link core datasets into the iteration directory for easy access
-echo "[5/5] Creating symbolic links to measurements and trainingset..."
-ln -sfn $(pwd)/${OUTDIR}/dataset/trainingset ${OUTDIR}/dataset/iteration_1/trainingset
+mv ${OUTDIR}/ms ${OUTDIR}/measurements_ms
+for i in $(seq -f "%04g" 0 $((n-1))); do mv ${OUTDIR}/measurements_ms/vla_${i}.MS ${OUTDIR}/measurements_ms/disk_${i}.MS; done
 
-echo "--------------------------------------------------"
-echo "Pipeline completed successfully!"
-echo "--------------------------------------------------"

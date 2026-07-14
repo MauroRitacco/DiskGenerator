@@ -44,6 +44,9 @@ def gen_imaging_weights(u, v, nW, im_size, weight_type="briggs", weight_gridsize
     # Initialize gridded weights matrix with zeros
     p = torch.floor((v + torch.pi) * N[0] / 2 / torch.pi).to(torch.int64).view(-1) - 1
     q = torch.floor((u + torch.pi) * N[1] / 2 / torch.pi).to(torch.int64).view(-1) - 1
+    # Clamp indices to valid grid range (UV points beyond Nyquist map outside the grid)
+    p = torch.clamp(p, 0, N[0] - 1)
+    q = torch.clamp(q, 0, N[1] - 1)
     gridded_weights = torch.zeros(torch.prod(N), dtype=torch.float64, device=u.device)
     uvInd = p * N[1] + q
     if weight_type != "none":

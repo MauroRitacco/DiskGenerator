@@ -26,7 +26,7 @@ def log_memory():
     print(f"Memory usage: {usage / 1024:.2f} MB")
 
 
-def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(128,128),nufft_pkg='tkbn', iSNR=40):
+def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(64,64),nufft_pkg='tkbn', iSNR=40):
     # Define u, v, w, y uv parameters from uv path
     uv = loadmat(uv_path, variable_names=["u", "v", "w", "frequency","nominal_pixelsize"])
 
@@ -48,7 +48,8 @@ def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(12
     data= load_data_to_tensor(uv_file_path=uv_path,
                               super_resolution=super_resolution,
                               img_size=img_size,
-                              image_pixel_size=image_pixel_size)
+                              image_pixel_size=image_pixel_size,
+                              weight_robustness=2.0)
 
     data["u"] /= wavelength
     data["v"] /= wavelength

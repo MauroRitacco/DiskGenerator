@@ -97,7 +97,7 @@ def generate_dirty_images():
             data_weighting=config.get("data_weighting", True),
             load_weight=config.get("load_weight", False),
             weight_type=config.get("weight_type", "briggs"),
-            weight_robustness=config.get("weight_robustness", 0.0),
+            weight_robustness=config.get("weight_robustness", 2.0),
         )
         
         # 2. Extract components

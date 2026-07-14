@@ -1,4 +1,7 @@
 pipeline/
+pipeline copy/
+pipeline_3000/
+studies/
 .venv/
 __pycache__/
 *.pyc

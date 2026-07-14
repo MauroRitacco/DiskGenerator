@@ -6,7 +6,9 @@ set -e
 # Path to the virtual environment python
 PYTHON=".venv/bin/python"
 #Number of samples
-n=100
+n=200
+#Starting index
+START_ID=200
 #Image size
 img_size=64
 #Path to the output directory
@@ -19,27 +21,29 @@ echo "--------------------------------------------------"
 mkdir -p ${OUTDIR}
 
 # Step 1: UV Pattern Generation
-echo "[1/6] Generating UV patterns..."
+echo "[1/7] Generating UV patterns..."
 $PYTHON utils/ri_measurement_operator/pyutils/sim_vla_ms.py \
     --outdir ${OUTDIR} \
-    --n $n
+    --n $n \
+    --start_id $START_ID
 
-rm -r ${OUTDIR}/vla_sims/png
-rm -r ${OUTDIR}/vla_sims/ms
-mv ${OUTDIR}/vla_sims/uvw ${OUTDIR}/ && rmdir ${OUTDIR}/vla_sims
+rm -r ${OUTDIR}/alma_sims/png
+mv ${OUTDIR}/alma_sims/ms ${OUTDIR}/
+mv ${OUTDIR}/alma_sims/uvw ${OUTDIR}/ && rmdir ${OUTDIR}/alma_sims
 
 
 # Step 2: Disk Generator
-echo "[2/6] Generating disks..."
+echo "[2/7] Generating disks..."
 $PYTHON src/disk_generator.py \
     --output_dir ${OUTDIR}/dataset/validationset \
     --num_samples $n \
     --img_size $img_size \
-    --generate_validation True
+    --generate_validation True \
+    --start_id $START_ID
 
 
 # Step 3: Visibility Simulation
-echo "[3/6] Simulating visibilities..."
+echo "[3/7] Simulating visibilities..."
 $PYTHON src/simulator.py \
     --uv_dir ${OUTDIR}/uvw \
     --gt_dir ${OUTDIR}/dataset/validationset \
@@ -49,7 +53,7 @@ $PYTHON src/simulator.py \
 
 
 # Step 4: Dirty image generation (initial residual) and save initial reconstruction (zeros)
-echo "[4/6] Generating dirty image (initial residual) and save initial reconstruction (zeros)..."
+echo "[4/7] Generating dirty image (initial residual) and save initial reconstruction (zeros)..."
 $PYTHON src/dirty_image.py \
     --config config.yaml \
     --data_file ${OUTDIR}/dataset/val_measurements/dummy.mat \
@@ -58,11 +62,11 @@ $PYTHON src/dirty_image.py \
     --generate_validation True
 
 # Step 5: Link core datasets into the iteration directory for easy access
-echo "[5/6] Creating symbolic links to measurements and trainingset..."
+echo "[5/7] Creating symbolic links to measurements and trainingset..."
 ln -sfn ../validationset ${OUTDIR}/dataset/iteration_1/validationset
 
 # Step 6: Merge validation and training dataset directories
-echo "[6/6] Merging validation and training dataset directories..."
+echo "[6/7] Merging validation and training dataset directories..."
 rsync -a ${OUTDIR}/dataset ${OUTDIR}/..
 
 # Step 7: Rename baseline distribution files and remove val_set/dataset

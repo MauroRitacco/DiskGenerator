@@ -5,8 +5,10 @@ set -e
 
 # Path to the virtual environment python
 PYTHON=".venv/bin/python"
-#Number of samples
-n=100
+#Number of samples — only 1495 remaining UV patterns needed to reach 3000 total (0000-2999)
+n=2
+#Starting index
+START_ID=0000
 #Image size
 img_size=64
 #Path to the output directory
@@ -22,18 +24,24 @@ mkdir -p ${OUTDIR}
 echo "[1/5] Generating UV patterns..."
 $PYTHON utils/ri_measurement_operator/pyutils/sim_vla_ms.py \
     --outdir ${OUTDIR} \
-    --n $n
-
-rm -r ${OUTDIR}/vla_sims/png
-# rm -r ${OUTDIR}/vla_sims/ms
-mv ${OUTDIR}/vla_sims/uvw ${OUTDIR}/ && mv ${OUTDIR}/vla_sims/ms ${OUTDIR}/ && rmdir ${OUTDIR}/vla_sims
+    --n $n \
+    --start_id $START_ID
+# 
+rm -rf ${OUTDIR}/alma_sims/png
+# Merge new uvw/ms files into existing directories (safe for incremental runs)
+# Note: .MS files are directories in CASA; -f ensures fresh copies always win
+mkdir -p ${OUTDIR}/uvw ${OUTDIR}/ms
+[ -d "${OUTDIR}/alma_sims/uvw" ] && mv -f ${OUTDIR}/alma_sims/uvw/* ${OUTDIR}/uvw/ && rm -rf ${OUTDIR}/alma_sims/uvw
+[ -d "${OUTDIR}/alma_sims/ms" ]  && mv -f ${OUTDIR}/alma_sims/ms/* ${OUTDIR}/ms/  && rm -rf ${OUTDIR}/alma_sims/ms
+rmdir ${OUTDIR}/alma_sims 2>/dev/null || true
 
 # Step 2: Disk Generator
 echo "[2/5] Generating disks..."
 $PYTHON src/disk_generator.py \
     --output_dir ${OUTDIR}/dataset/trainingset \
     --num_samples $n \
-    --img_size $img_size
+    --img_size $img_size \
+    --start_id $START_ID
 
 # Step 3: Visibility Simulation
 echo "[3/5] Simulating visibilities..."

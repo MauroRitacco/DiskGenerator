@@ -1,6 +1,6 @@
 pipeline/
 pipeline copy/
-pipeline_3000/
+zpipeline_3000/
 studies/
 .venv/
 __pycache__/

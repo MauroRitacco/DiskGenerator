@@ -6,9 +6,9 @@ set -e
 # Path to the virtual environment python
 PYTHON=".venv/bin/python"
 #Number of samples
-n=200
+n=600
 #Starting index
-START_ID=200
+START_ID=0000
 #Image size
 img_size=64
 #Path to the output directory

@@ -44,6 +44,11 @@ def generate_dirty_images():
     img_size = (args.img_size, args.img_size)
     real_flag = True
 
+    # Device selection
+    meas_op_on_gpu = config.get("meas_op_on_gpu", False)
+    device = torch.device("cuda") if meas_op_on_gpu and torch.cuda.is_available() else torch.device("cpu")
+    print(f"INFO: using device {device}")
+
     # Get execution directory fallback mechanisms
     out_dir_path = args.output_path if args.output_path else config.get("output_path", BASE_DIR / "pipeline" / "dirty")
     out_dir = Path(out_dir_path).resolve()
@@ -98,6 +103,7 @@ def generate_dirty_images():
             load_weight=config.get("load_weight", False),
             weight_type=config.get("weight_type", "briggs"),
             weight_robustness=config.get("weight_robustness", 2.0),
+            device=device,
         )
         
         # 2. Extract components
@@ -114,7 +120,8 @@ def generate_dirty_images():
             image_weight=nWimag,
             grid_size=nufft_grid_size,
             kernel_dim=nufft_kernel_dim,
-            dtype=torch.float64
+            dtype=torch.float64,
+            device=device,
         )
         
         with torch.no_grad():

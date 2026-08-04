@@ -81,6 +81,9 @@ def main():
                 dt5 = np.random.uniform(0.03, 0.25)    # C40-5 (compact): ~2-15 min on-source (DSHARP: ~12 min)
                 dt8 = np.random.uniform(0.15, 1.17)    # C40-8/9 (extended): ~9-70 min on-source (DSHARP: 35-70 min)
                 dt_step = 6                             # ALMA standard dump time (seconds)
+                # dt5 = 0.0    # C40-5 (compact): ~2-15 min on-source (DSHARP: ~12 min)
+                # dt8 = 0.0    # C40-8/9 (extended): ~9-70 min on-source (DSHARP: 35-70 min)
+                # dt_step = 6                             # ALMA standard dump time (seconds)
             
                 print("info: (param) obs. time with config C40-5 of freqs: %.2f h" % dt5)
                 print("info: (param) obs. time with config C40-8 of freqs: %.2f h" % dt8)
@@ -241,8 +244,8 @@ def main():
                 # ------------------------------
                 # Step 3: Save uvw to .mat
                 # ------------------------------
-                # Set nominal pixelsize randomly in the interval [0.5/64, 4/64] arcsec
-                nominal_pixelsize = np.random.uniform(1.5 / 64, 3.0 / 64)
+                # Set nominal pixelsize randomly in the interval [0.3/64, 5/64] arcsec
+                nominal_pixelsize = np.random.uniform(0.3/64, 5/64)
                 print("info: nominal pixelsize:  %f arcsec" % nominal_pixelsize)
 
                 # uvw saved in units of meter

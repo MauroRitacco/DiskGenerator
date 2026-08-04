@@ -31,22 +31,22 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
     # --- Disk geometry ---
     AXIS_RATIO_RANGE = (0.15, 0.95)        # min/max axis ratio (cos of inclination)
     PA_RANGE = (0, 180)                    # position angle range (degrees)
-    Q_INDEX_RANGE = (0.5, 1.5)            # power-law decay index range
+    Q_INDEX_RANGE = (0.5, 1.5)             # power-law decay index range
     R_REF_FRAC = 0.06                      # reference radius as fraction of img_size
 
     # --- Ring structure ---
     NUM_RINGS_RANGE = (1, 5)               # min/max number of rings
-    RING_SIGMA_MIN_FRAC = 12.0 / 512.0      # ring width (sigma) lower bound as fraction of img_size
+    RING_SIGMA_MIN_FRAC = 12.0 / 512.0     # ring width (sigma) lower bound as fraction of img_size
     RING_SIGMA_MAX_FRAC = 21.0 / 512.0     # ring width (sigma) upper bound as fraction of img_size
     RING_R_MIN_FRAC = 0.05                 # innermost ring radius as fraction of img_size
-    RING_R_MAX_MARGIN_FRAC = 0.06          # margin from edge for outermost ring (fraction of img_size)
-    RING_MIN_SEP_FRAC = 0.09              # minimum separation between rings (fraction of img_size)
+    RING_R_MAX_MARGIN_FRAC = 0.15          # margin from edge for outermost ring (fraction of img_size)
+    RING_MIN_SEP_FRAC = 0.09               # minimum separation between rings (fraction of img_size)
     RING_MIN_SEP_ABS = 4.0                 # absolute minimum separation (pixels)
     RING_AMP_RANGE = (0.8, 1.2)            # ring amplitude jitter range
     RING_PLACEMENT_ATTEMPTS = 50           # max attempts to place a ring without overlap
 
     # --- Ring wobble (per-ring center offset) ---
-    WOBBLE_MAX_FRAC = 4.0 / 512.0          # max wobble offset as fraction of img_size
+    WOBBLE_MAX_FRAC = 8.0 / 512.0          # max wobble offset as fraction of img_size
 
     # --- Per-ring inclination/PA variation ---
     DELTA_INC_MANY = (-2, 2)               # inclination wobble (degrees) when >3 rings
@@ -56,7 +56,7 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
 
     # --- Extra faint source (planet/background) ---
     EXTRA_SOURCE_PROB = 0.5                # probability of adding an extra source
-    EXTRA_MARGIN_FRAC = 0.1                # edge margin as fraction of img_size
+    EXTRA_MARGIN_FRAC = 0.15               # edge margin as fraction of img_size
     EXTRA_AMP_RANGE = (0.2, 0.5)           # brightness range
     EXTRA_SIGMA_MIN_FRAC = 8.0 / 512.0     # sigma lower bound as fraction of img_size
     EXTRA_SIGMA_MAX_FRAC = 16.0 / 512.0    # sigma upper bound as fraction of img_size
@@ -229,7 +229,9 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
 
         # Coordinate System (WCS) mapping to degrees
         # Load nominal_pixelsize directly from the corresponding .mat file (sibling uvw/ directory)
-        uv_mat_path = os.path.join(os.path.dirname(ms_path), '..', 'uvw', f'uv_{start_id + i:04d}.mat')
+        uv_mat_path = os.path.normpath(
+            os.path.join(os.path.dirname(ms_path), '..', 'uvw', f'uv_{start_id + i:04d}.mat')
+        )
         cell_deg = loadmat(uv_mat_path)['nominal_pixelsize'].item() / 3600.0
         hdr['CDELT1'] = -cell_deg
         hdr['CDELT2'] = cell_deg

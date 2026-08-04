@@ -6,7 +6,7 @@ set -e
 # Path to the virtual environment python
 PYTHON=".venv/bin/python"
 #Number of samples
-n=2
+n=1
 #Image size
 img_size=64
 #Path to the output directory

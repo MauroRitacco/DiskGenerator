@@ -8,8 +8,9 @@ data_weighting: True
 load_weight: False
 weight_type: briggs
 weight_gridsize: 2
-weight_robustness: 0.0
+weight_robustness: 2.0
 meas_op_on_gpu: True
 nufft_oversampling_factor: 2.0
 nufft_kernel_dim: 7
 nufft_mode: table
+meas_op_on_gpu: False

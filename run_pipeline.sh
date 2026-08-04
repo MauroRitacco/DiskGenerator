@@ -6,7 +6,7 @@ set -e
 # Path to the virtual environment python
 PYTHON=".venv/bin/python"
 #Number of samples — only 1495 remaining UV patterns needed to reach 3000 total (0000-2999)
-n=2
+n=4000
 #Starting index
 START_ID=0000
 #Image size
@@ -26,7 +26,7 @@ $PYTHON utils/ri_measurement_operator/pyutils/sim_vla_ms.py \
     --outdir ${OUTDIR} \
     --n $n \
     --start_id $START_ID
-# 
+
 rm -rf ${OUTDIR}/alma_sims/png
 # Merge new uvw/ms files into existing directories (safe for incremental runs)
 # Note: .MS files are directories in CASA; -f ensures fresh copies always win

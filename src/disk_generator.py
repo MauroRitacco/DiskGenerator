@@ -12,12 +12,14 @@ Characteristics:
 import numpy as np
 from astropy.io import fits
 import os
+import json
 import random
 import argparse
 from scipy.io import loadmat
 
 
-def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate_validation=False, seed=None):
+def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate_validation=False, seed=None,
+                  forced_num_rings=None, has_center=None, has_extra=None, metadata=None):
     if seed is not None:
         random.seed(seed)
         np.random.seed(seed)
@@ -70,13 +72,21 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
 
     # ============================================================
 
+    # Override grid parameters when requested via CLI
+    if forced_num_rings is not None:
+        NUM_RINGS_RANGE = (forced_num_rings, forced_num_rings)
+    if has_extra is not None:
+        EXTRA_SOURCE_PROB = 1.0 if has_extra else 0.0
+    if has_center is not None:
+        STAR_PROB = 1.0 if has_center else 0.0
+
     print(f"Generating {num_samples} disks in '{output_dir}'...")
     # Grid setup
     x = np.linspace(-img_size / 2, img_size / 2, img_size)
     y = np.linspace(-img_size / 2, img_size / 2, img_size)
     xx, yy = np.meshgrid(x, y)
 
-    for i in range(num_samples):
+    def try_one(i):
         # Empty image
         disk_image = np.zeros((img_size, img_size), dtype=np.float32)
 
@@ -109,6 +119,19 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
                         break
 
             radii.sort()
+            n_rings = len(radii)
+
+            if forced_num_rings is not None and n_rings < forced_num_rings:
+                raise RuntimeError(f"ring_placement_failed: placed {n_rings}/{forced_num_rings} rings")
+
+            # Per-ring sampled parameters (for metadata/header)
+            ring_radii = []
+            ring_sigmas = []
+            ring_amps = []
+            ring_dx = []
+            ring_dy = []
+            ring_inc = []
+            ring_pa = []
 
             for mu in radii:
                 sigma = random.uniform(
@@ -156,8 +179,20 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
                 # Add ring to disk buffer
                 disk_image += amp * np.exp(-((r_ell - mu) ** 2) / (2 * sigma ** 2))
 
+                ring_radii.append(float(mu))
+                ring_sigmas.append(float(sigma))
+                ring_amps.append(float(amp))
+                ring_dx.append(float(dx))
+                ring_dy.append(float(dy))
+                ring_inc.append(float(ring_inc_rad))
+                ring_pa.append(float(ring_pa_deg))
+
+        else:
+            n_rings = 0
+
         # 2. Extra faint source
         has_extra = random.random() < EXTRA_SOURCE_PROB
+        ex_x, ex_y, amp_ex, sig_ex = 0.0, 0.0, 0.0, 0.0
 
         if has_extra:
             margin = max(2, int(img_size * EXTRA_MARGIN_FRAC))
@@ -181,6 +216,7 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
 
         # 4. Central Star
         has_center = random.random() < STAR_PROB
+        disk_scale_factor, sigma_star = 1.0, 0.0
 
         final_image = disk_image
 
@@ -225,16 +261,40 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
         hdr['OBJECT'] = 'Synthetic Disk'
         hdr['HAS_STAR'] = str(has_center)
         hdr['HAS_EXT'] = str(has_extra)
-        hdr['BUNIT']='Jy/pixel'
+        hdr['SEED'] = image_seed if image_seed is not None else -1
+        hdr['IMG_SIZE'] = img_size
+        hdr['Q_INDEX'] = q_index
+        hdr['AXIS_RAT'] = base_axis_ratio
+        hdr['INC_RAD'] = base_inc_rad
+        hdr['PA_DEG'] = base_angle_deg
+        hdr['R_REF'] = r_ref
+        hdr['N_RINGS'] = n_rings
+        if n_rings > 0:
+            hdr['RING_RAD'] = ','.join(f'{r:.6f}' for r in ring_radii)
+            hdr['RING_SIG'] = ','.join(f'{s:.6f}' for s in ring_sigmas)
+            hdr['RING_AMP'] = ','.join(f'{a:.6f}' for a in ring_amps)
+            hdr['RING_DX'] = ','.join(f'{x:.6f}' for x in ring_dx)
+            hdr['RING_DY'] = ','.join(f'{y:.6f}' for y in ring_dy)
+            hdr['RING_INC'] = ','.join(f'{inc:.6f}' for inc in ring_inc)
+            hdr['RING_PA'] = ','.join(f'{pa:.6f}' for pa in ring_pa)
+        hdr['EXT_X'] = ex_x
+        hdr['EXT_Y'] = ex_y
+        hdr['EXT_S'] = sig_ex
+        hdr['EXT_A'] = amp_ex
+        hdr['STAR_DSF'] = disk_scale_factor
+        hdr['STAR_SIG'] = sigma_star
+        hdr['BUNIT'] = 'Jy/pixel'
 
         # Coordinate System (WCS) mapping to degrees
         # Load nominal_pixelsize directly from the corresponding .mat file (sibling uvw/ directory)
         uv_mat_path = os.path.normpath(
             os.path.join(os.path.dirname(ms_path), '..', 'uvw', f'uv_{start_id + i:04d}.mat')
         )
-        cell_deg = loadmat(uv_mat_path)['nominal_pixelsize'].item() / 3600.0
+        nominal_pixelsize = loadmat(uv_mat_path)['nominal_pixelsize'].item()
+        cell_deg = nominal_pixelsize / 3600.0
         hdr['CDELT1'] = -cell_deg
         hdr['CDELT2'] = cell_deg
+        hdr['IMSIZE_A'] = nominal_pixelsize * img_size
         hdr['CUNIT1'] = 'deg'
         hdr['CUNIT2'] = 'deg'
         hdr['CTYPE1'] = 'RA---SIN'
@@ -243,6 +303,72 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
         hdr['CRPIX2'] = (img_size / 2) + 0.5
 
         fits.writeto(fpath, final_image, header=hdr, overwrite=True)
+
+        if metadata is not None:
+            meta = {
+                "name": os.path.basename(fpath),
+                "cell": {
+                    "image_size_arcsec": float(hdr['IMSIZE_A']),
+                    "num_rings": int(n_rings),
+                    "has_center": bool(has_center),
+                    "has_extra": bool(has_extra),
+                },
+                "sampled_params": {
+                    "q_index": float(q_index),
+                    "axis_ratio": float(base_axis_ratio),
+                    "inc_rad": float(base_inc_rad),
+                    "pa_deg": float(base_angle_deg),
+                    "r_ref": float(r_ref),
+                    "n_rings": int(n_rings),
+                    "has_center": bool(has_center),
+                    "has_extra": bool(has_extra),
+                    "ext_x": float(ex_x),
+                    "ext_y": float(ex_y),
+                    "ext_s": float(sig_ex),
+                    "ext_a": float(amp_ex),
+                    "star_dsf": float(disk_scale_factor),
+                    "star_sig": float(sigma_star),
+                    "seed": int(image_seed) if image_seed is not None else None,
+                    "nominal_pixelsize": float(nominal_pixelsize),
+                    "rings": [
+                        {
+                            "radius": float(r),
+                            "sigma": float(s),
+                            "amplitude": float(a),
+                            "dx": float(dx_i),
+                            "dy": float(dy_i),
+                            "inc_rad": float(inc_i),
+                            "pa_deg": float(pa_i),
+                        }
+                        for r, s, a, dx_i, dy_i, inc_i, pa_i in zip(
+                            ring_radii, ring_sigmas, ring_amps, ring_dx, ring_dy, ring_inc, ring_pa
+                        )
+                    ] if n_rings > 0 else []
+                }
+            }
+            with open(metadata, 'w') as f:
+                json.dump(meta, f, indent=2)
+
+    for i in range(num_samples):
+        # Unique deterministic seed for this image.  A large step (1e6) guarantees
+        # that retry attempts from different images never collide.
+        image_seed = (seed + i * 1000000) if seed is not None else None
+        if image_seed is not None:
+            random.seed(image_seed)
+            np.random.seed(image_seed)
+
+        max_attempts = 1000 if forced_num_rings is not None else 1
+        for attempt in range(max_attempts):
+            try:
+                try_one(i)
+                break
+            except RuntimeError as e:
+                if "ring_placement_failed" not in str(e):
+                    raise
+                if attempt == max_attempts - 1:
+                    raise RuntimeError(f"Image {start_id + i:04d}: failed to place {forced_num_rings} rings after {max_attempts} attempts")
+                print(f"  Image {start_id + i:04d}: attempt {attempt} failed ({e}), retrying...")
+                continue
 
         if (i + 1) % 10 == 0:
             print(f"  Saved {i + 1}/{num_samples} ")
@@ -258,6 +384,10 @@ if __name__ == "__main__":
     parser.add_argument("--start_id", type=int, default=0, help="Starting ID for the generated files")
     parser.add_argument("--generate_validation", type=bool, default=False, help="Generate validation set")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility")
+    parser.add_argument("--num_rings", type=int, default=None, help="Force number of rings")
+    parser.add_argument("--has_center", type=str, default=None, choices=["true", "false"], help="Force central star (true/false)")
+    parser.add_argument("--has_extra", type=str, default=None, choices=["true", "false"], help="Force extra source (true/false)")
+    parser.add_argument("--metadata", type=str, default=None, help="Path to write JSON metadata sidecar")
     args = parser.parse_args()
 
     generate_disk(
@@ -266,5 +396,9 @@ if __name__ == "__main__":
         img_size=args.img_size,
         start_id=args.start_id,
         generate_validation=args.generate_validation,
-        seed=args.seed
+        seed=args.seed,
+        forced_num_rings=args.num_rings,
+        has_center=args.has_center.lower() == "true" if args.has_center is not None else None,
+        has_extra=args.has_extra.lower() == "true" if args.has_extra is not None else None,
+        metadata=args.metadata
     )

@@ -52,6 +52,10 @@ Key settings include:
 - `weight_robustness` & `nufft_oversampling_factor`: Regulates spatial mappings.
 - `meas_op_on_gpu`: Accelerates measurement calculations via CUDA.
 
+## Custom modifications to external utilities
+
+`utils/ri_measurement_operator/pyutils/sim_vla_ms.py` is part of the BASP R2D2 measurement-operator utilities. For the final comparison experiments we added a `--pixelsize` CLI argument so the pipeline can generate datasets with a controlled total field of view (`FOV = pixelsize × img_size`) instead of using the hard-coded random range `[0.3/64, 5/64]` arcsec/pixel. The value is stored as `nominal_pixelsize` in the output `.mat` files. When the argument is omitted the script keeps its original random behaviour, so existing pipelines are unaffected.
+
 ## Acknowledgments
 
 Everything in `utils/` is taken from BASP's R2D2 GitHub repository.

@@ -35,6 +35,8 @@ parser.add_argument('-n', '--npatterns', default=1)
 parser.add_argument('--start_id', default=0, help="Starting ID for the generated files")
 # custom output directory (defaults to current working directory)
 parser.add_argument('--outdir', default=os.getcwd(), help="Output directory")
+parser.add_argument('--pixelsize', type=float, default=None,
+                    help="Pixel size in arcsec (stored as nominal_pixelsize in the .mat file). If omitted, a random value in [0.3/64, 5/64] is used.")
 args = parser.parse_args()
 
 # use the specified outdir for all data generation
@@ -244,8 +246,11 @@ def main():
                 # ------------------------------
                 # Step 3: Save uvw to .mat
                 # ------------------------------
-                # Set nominal pixelsize randomly in the interval [0.3/64, 5/64] arcsec
-                nominal_pixelsize = np.random.uniform(0.3/64, 5/64)
+                # Set nominal pixelsize: use CLI value if provided, otherwise random in [0.3/64, 5/64] arcsec
+                if args.pixelsize is not None:
+                    nominal_pixelsize = args.pixelsize
+                else:
+                    nominal_pixelsize = np.random.uniform(0.3/64, 5/64)
                 print("info: nominal pixelsize:  %f arcsec" % nominal_pixelsize)
 
                 # uvw saved in units of meter

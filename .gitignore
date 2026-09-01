@@ -2,6 +2,7 @@ pipeline/
 pipeline copy/
 zpipeline_3000/
 studies/
+dataset/
 .venv/
 __pycache__/
 *.pyc

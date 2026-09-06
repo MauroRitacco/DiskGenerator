@@ -14,12 +14,10 @@ import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib.ticker import FormatStrFormatter
 
-# Styling defaults from your script
 plt.rcParams.update({'font.size': 15})
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 
-# Path setup to include local utils
 BASE_DIR = Path(__file__).resolve().parent.parent
 import sys
 sys.path.insert(0, str(BASE_DIR / "utils" / "ri_measurement_operator"))
@@ -35,21 +33,18 @@ def generate_dirty_images():
     parser.add_argument("--generate_validation",type=bool,default=False)
     args = parser.parse_args()
 
-    # Read yaml
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 
-    # Resolution settings
     super_resolution = config.get("super_resolution", 1)
     img_size = (args.img_size, args.img_size)
     real_flag = True
 
-    # Device selection
     meas_op_on_gpu = config.get("meas_op_on_gpu", False)
     device = torch.device("cuda") if meas_op_on_gpu and torch.cuda.is_available() else torch.device("cpu")
     print(f"INFO: using device {device}")
 
-    # Get execution directory fallback mechanisms
+    # output dir: CLI > config > default
     out_dir_path = args.output_path if args.output_path else config.get("output_path", BASE_DIR / "pipeline" / "dirty")
     out_dir = Path(out_dir_path).resolve()
     
@@ -62,7 +57,7 @@ def generate_dirty_images():
     os.makedirs(res_dir, exist_ok=True)
     os.makedirs(rec_dir, exist_ok=True)
     
-    # Locate dataset
+    # measurement dir: CLI arg or default
     meas_dir = Path(args.data_file).parent if args.data_file else BASE_DIR / "pipeline" / "dataset" / "measurements"
     mat_files = sorted(list(meas_dir.glob("*.mat")))
 
@@ -72,7 +67,7 @@ def generate_dirty_images():
         
     print(f"INFO: Generating dirty images for {len(mat_files)} measurement files...")
     
-    # Import the NUFFT package
+    # NUFFT backend
     nufft_pkg = config.get("nufft_pkg", "finufft")
     match nufft_pkg:
         case "finufft":
@@ -92,9 +87,7 @@ def generate_dirty_images():
     for mat_path in mat_files:
         print(f"Processing: {mat_path.name}...")
         
-        # 1. Load measurement dataset explicitly generated from simulator.py
-        # This parses u, v, w, y (which contains simulator noise), and nW (noise weight parameter)
-        # Note: If data_weighting is True, load_data_to_tensor intrinsically applies nW and calculates nWimag into y.
+        # Load u, v, w, y, nW (applies nW weighting if data_weighting)
         data = load_data_to_tensor(
             uv_file_path=str(mat_path),
             super_resolution=super_resolution,
@@ -106,11 +99,10 @@ def generate_dirty_images():
             device=device,
         )
         
-        # 2. Extract components
         nW = data["nW"]
         nWimag = data.get("nWimag", torch.ones_like(nW))
         
-        # 3. Create weighted operator natively combining weights
+        # Weighted operator
         meas_op_weighted = Operator(
             u=data["u"],
             v=data["v"],
@@ -125,18 +117,18 @@ def generate_dirty_images():
         )
         
         with torch.no_grad():
-            # 4. Generate PSF and Extract Kappa factor 
+            # PSF peak -> kappa 
             dirac = torch.zeros(1, 1, *img_size, dtype=torch.float64, device=data["u"].device)
             dirac[0, 0, img_size[0] // 2, img_size[1] // 2] = 1
             
             psf_0 = meas_op_weighted.adjoint_op(meas_op_weighted.forward_op(dirac))
             kappa = 1 / torch.max(psf_0)
             
-            # 5. Calculate back-projected dirty image natively using pre-calculated Operator Weight Math
+            # Dirty image (back-projection)
             dirty = kappa * meas_op_weighted.adjoint_op(data["y"])
             dirty_norm = dirty.squeeze().cpu().numpy()
 
-        # 6. Save results locally in separated folders
+        # Save res/rec
         base_id = mat_path.stem.split("_")[-1]
         if args.generate_validation:
             res_name = f"val_disk_{base_id}_res.fits"

@@ -26,29 +26,27 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    # ============================================================
-    # CONFIGURATION — All tunable parameters in one place
-    # ============================================================
+    # Tunable parameters
 
     # --- Disk geometry ---
     AXIS_RATIO_RANGE = (0.15, 0.95)        # min/max axis ratio (cos of inclination)
     PA_RANGE = (0, 180)                    # position angle range (degrees)
     Q_INDEX_RANGE = (0.5, 1.5)             # power-law decay index range
-    R_REF_FRAC = 0.06                      # reference radius as fraction of img_size
+    R_REF_FRAC = 0.06                      # x img_size
 
     # --- Ring structure ---
     NUM_RINGS_RANGE = (1, 5)               # min/max number of rings
-    RING_SIGMA_MIN_FRAC = 12.0 / 512.0     # ring width (sigma) lower bound as fraction of img_size
-    RING_SIGMA_MAX_FRAC = 21.0 / 512.0     # ring width (sigma) upper bound as fraction of img_size
-    RING_R_MIN_FRAC = 0.05                 # innermost ring radius as fraction of img_size
-    RING_R_MAX_MARGIN_FRAC = 0.15          # margin from edge for outermost ring (fraction of img_size)
-    RING_MIN_SEP_FRAC = 0.09               # minimum separation between rings (fraction of img_size)
+    RING_SIGMA_MIN_FRAC = 12.0 / 512.0     # ring sigma, lower
+    RING_SIGMA_MAX_FRAC = 21.0 / 512.0     # ring sigma, upper
+    RING_R_MIN_FRAC = 0.05                 # innermost ring radius
+    RING_R_MAX_MARGIN_FRAC = 0.15          # edge margin for outermost ring
+    RING_MIN_SEP_FRAC = 0.09               # min ring separation
     RING_MIN_SEP_ABS = 4.0                 # absolute minimum separation (pixels)
     RING_AMP_RANGE = (0.8, 1.2)            # ring amplitude jitter range
     RING_PLACEMENT_ATTEMPTS = 50           # max attempts to place a ring without overlap
 
     # --- Ring wobble (per-ring center offset) ---
-    WOBBLE_MAX_FRAC = 8.0 / 512.0          # max wobble offset as fraction of img_size
+    WOBBLE_MAX_FRAC = 8.0 / 512.0          # max ring offset
 
     # --- Per-ring inclination/PA variation ---
     DELTA_INC_MANY = (-2, 2)               # inclination wobble (degrees) when >3 rings
@@ -58,21 +56,19 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
 
     # --- Extra faint source (planet/background) ---
     EXTRA_SOURCE_PROB = 0.5                # probability of adding an extra source
-    EXTRA_MARGIN_FRAC = 0.15               # edge margin as fraction of img_size
+    EXTRA_MARGIN_FRAC = 0.15               # edge margin
     EXTRA_AMP_RANGE = (0.2, 0.5)           # brightness range
-    EXTRA_SIGMA_MIN_FRAC = 8.0 / 512.0     # sigma lower bound as fraction of img_size
-    EXTRA_SIGMA_MAX_FRAC = 16.0 / 512.0    # sigma upper bound as fraction of img_size
+    EXTRA_SIGMA_MIN_FRAC = 8.0 / 512.0     # sigma, lower
+    EXTRA_SIGMA_MAX_FRAC = 16.0 / 512.0    # sigma, upper
 
     # --- Central star ---
     STAR_PROB = 0.5                        # probability of adding a central star
     STAR_DISK_SCALE_RANGE = (0.4, 0.8)     # disk intensity scale-down when star is present
     STAR_PEAK = 1.0                        # star peak intensity
-    STAR_SIGMA_MIN_FRAC = 8.0 / 512.0      # star sigma lower bound as fraction of img_size
-    STAR_SIGMA_MAX_FRAC = 16.0 / 512.0     # star sigma upper bound as fraction of img_size
+    STAR_SIGMA_MIN_FRAC = 8.0 / 512.0      # star sigma, lower
+    STAR_SIGMA_MAX_FRAC = 16.0 / 512.0     # star sigma, upper
 
-    # ============================================================
-
-    # Override grid parameters when requested via CLI
+    # CLI overrides
     if forced_num_rings is not None:
         NUM_RINGS_RANGE = (forced_num_rings, forced_num_rings)
     if has_extra is not None:
@@ -87,10 +83,9 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
     xx, yy = np.meshgrid(x, y)
 
     def try_one(i):
-        # Empty image
         disk_image = np.zeros((img_size, img_size), dtype=np.float32)
 
-        # Randomize disk params (Base values)
+        # Base disk params
         base_axis_ratio = random.uniform(*AXIS_RATIO_RANGE)
         base_inc_rad = np.arccos(base_axis_ratio)
 
@@ -103,11 +98,10 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
         num_rings = random.randint(*NUM_RINGS_RANGE)
 
         if num_rings > 0:
-            # Generate radii with minimum separation to avoid overlap
+            # Sample radii with min separation
             radii = []
             min_sep = max(RING_MIN_SEP_ABS, img_size * RING_MIN_SEP_FRAC)
 
-            # Available range
             r_min = max(3, int(img_size * RING_R_MIN_FRAC))
             r_max = max(r_min + 5, img_size // 2 - int(img_size * RING_R_MAX_MARGIN_FRAC))
 
@@ -124,7 +118,7 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
             if forced_num_rings is not None and n_rings < forced_num_rings:
                 raise RuntimeError(f"ring_placement_failed: placed {n_rings}/{forced_num_rings} rings")
 
-            # Per-ring sampled parameters (for metadata/header)
+            # Per-ring params (header/metadata)
             ring_radii = []
             ring_sigmas = []
             ring_amps = []
@@ -139,13 +133,13 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
                     max(2.0, img_size * RING_SIGMA_MAX_FRAC),
                 )
 
-                # Random center offset (wobble proportional to size)
+                # Ring center wobble
                 off_r = random.uniform(0, max(0.5, img_size * WOBBLE_MAX_FRAC))
                 off_phi = random.uniform(0, 2 * np.pi)
                 dx = off_r * np.cos(off_phi)
                 dy = off_r * np.sin(off_phi)
 
-                # Per-ring inclination variation
+                # Per-ring inc/PA jitter
                 if num_rings > 3:
                     delta_inc_deg = random.uniform(*DELTA_INC_MANY)
                     delta_pa_deg = random.uniform(*DELTA_PA_MANY)
@@ -153,7 +147,6 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
                     delta_inc_deg = random.uniform(*DELTA_INC_FEW)
                     delta_pa_deg = random.uniform(*DELTA_PA_FEW)
 
-                # Apply to base
                 ring_inc_rad = base_inc_rad + np.radians(delta_inc_deg)
                 ring_pa_deg = base_angle_deg + delta_pa_deg
 
@@ -165,7 +158,7 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
                 xx_s = xx - dx
                 yy_s = yy - dy
 
-                # Rotate using ring-specific theta (Standard CCW rotation)
+                # Rotate (CCW)
                 xx_rot = xx_s * np.cos(ring_theta) - yy_s * np.sin(ring_theta)
                 yy_rot = xx_s * np.sin(ring_theta) + yy_s * np.cos(ring_theta)
 
@@ -176,7 +169,6 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
                 decay = (mu / r_ref) ** (-q_index)
                 amp = decay * random.uniform(*RING_AMP_RANGE)
 
-                # Add ring to disk buffer
                 disk_image += amp * np.exp(-((r_ell - mu) ** 2) / (2 * sigma ** 2))
 
                 ring_radii.append(float(mu))
@@ -209,7 +201,7 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
 
             disk_image += amp_ex * np.exp(-(r_ex ** 2) / (2 * sig_ex ** 2))
 
-        # 3. Intermediate Normalization (The Disk)
+        # 3. Normalize disk
         vmax_d, vmin_d = np.max(disk_image), np.min(disk_image)
         if vmax_d > vmin_d + 1e-9:
             disk_image = (disk_image - vmin_d) / (vmax_d - vmin_d)
@@ -235,7 +227,6 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
             final_image += star_blob
 
         # 5. Final Normalize & Save
-        # Re-normalize to ensure [0,1] range
         vmax, vmin = np.max(final_image), np.min(final_image)
         if vmax > vmin + 1e-9:
             final_image = (final_image - vmin) / (vmax - vmin)
@@ -285,8 +276,8 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
         hdr['STAR_SIG'] = sigma_star
         hdr['BUNIT'] = 'Jy/pixel'
 
-        # Coordinate System (WCS) mapping to degrees
-        # Load nominal_pixelsize directly from the corresponding .mat file (sibling uvw/ directory)
+        # WCS headers
+        # Pixel size from sibling uvw .mat
         uv_mat_path = os.path.normpath(
             os.path.join(os.path.dirname(ms_path), '..', 'uvw', f'uv_{start_id + i:04d}.mat')
         )
@@ -350,8 +341,7 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
                 json.dump(meta, f, indent=2)
 
     for i in range(num_samples):
-        # Unique deterministic seed for this image.  A large step (1e6) guarantees
-        # that retry attempts from different images never collide.
+        # Deterministic per-image seed; big step so retries don't collide
         image_seed = (seed + i * 1000000) if seed is not None else None
         if image_seed is not None:
             random.seed(image_seed)

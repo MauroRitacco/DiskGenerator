@@ -6,13 +6,13 @@ from astropy.io import fits
 def calculate_pixel_size(ms_path):
     tb = table()
     
-    # Get the longest projected baseline in meters (u, v)
+    # Longest projected baseline (m)
     tb.open(ms_path)
     uvw = tb.getcol('UVW')
     tb.close()
     longest_baseline_meters = np.max(np.sqrt(uvw[0]**2 + uvw[1]**2))
     
-    # Get the reference frequency and calculate wavelength
+    # Reference frequency
     tb.open(ms_path + '/SPECTRAL_WINDOW')
     frequency = tb.getcol('CHAN_FREQ')[0, 0]
     tb.close()
@@ -26,7 +26,6 @@ def calculate_pixel_size(ms_path):
 def convert_jybeam_to_jypixel(fits_path):
     """Convert a FITS image from Jy/beam to Jy/pixel."""
     data, hdr = fits.getdata(fits_path, header=True)
-    # Unit conversion: Jy/beam -> Jy/pixel
     factor = (4 * np.log(2) * hdr['CDELT1']**2) / (np.pi * hdr['BMAJ'] * hdr['BMIN'])
     data = data * factor
     if 'BUNIT' in hdr:
@@ -43,7 +42,7 @@ def smoothimage(reconstruction_path, ground_truth_path, ms_path):
     gt_dir = os.path.dirname(ground_truth_path)
     recon_name = os.path.basename(reconstruction_path)
     
-    # Delete output file if it exists to avoid CASA collision issues
+    # Remove existing output (CASA collisions)
     out_file = os.path.join(gt_dir, recon_name.replace('.fits', '_smoothed.fits'))
     if os.path.exists(out_file):
         try:
@@ -55,7 +54,7 @@ def smoothimage(reconstruction_path, ground_truth_path, ms_path):
         except Exception:
             pass
 
-    # imsmooth outputs a CASA image directory. We write to a temporary .image first.
+    # imsmooth writes a CASA .image dir; convert to FITS after
     temp_casa_image = os.path.join(gt_dir, recon_name.replace('.fits', '_temp_smoothed.image'))
     if os.path.exists(temp_casa_image):
         import shutil
@@ -77,8 +76,7 @@ def smoothimage(reconstruction_path, ground_truth_path, ms_path):
         fitsimage=out_file,
         overwrite=True
     )
-    # exportfits sometimes drops the beam keywords. We inject them explicitly 
-    # so convert_jybeam_to_jypixel can perform the Jy/beam -> Jy/pixel scaling.
+    # exportfits may drop beam keywords; re-inject them
     out_data, out_hdr = fits.getdata(out_file, header=True)
     out_hdr['BMAJ'] = recon_hdr['BMAJ']
     out_hdr['BMIN'] = recon_hdr['BMIN']
@@ -89,7 +87,6 @@ def smoothimage(reconstruction_path, ground_truth_path, ms_path):
     fits.writeto(out_file, out_data, out_hdr, overwrite=True)
 
     
-    # Cleanup temporary files
     if os.path.exists(temp_casa_image):
         import shutil
         shutil.rmtree(temp_casa_image, ignore_errors=True)
@@ -106,16 +103,15 @@ def formatfits(fits_path, ms_path):
     hdr['NAXIS2'] = imsize
     hdr['BUNIT'] = 'Jy/pixel'
 
-    # 2. Convertir cell a grados para el estándar WCS usando el ms_path
+    # Cell size to degrees (WCS)
     cell_deg = calculate_pixel_size(ms_path) / 3600.0
 
-    # CRUCIAL PARA CARTA: Mismo valor absoluto en ambos ejes
-    hdr['CDELT1'] = -cell_deg  # Eje X (negativo por convención de RA)
-    hdr['CDELT2'] = cell_deg   # Eje Y (DEC)
+    # Same |CDELT| on both axes (CARTA needs it)
+    hdr['CDELT1'] = -cell_deg
+    hdr['CDELT2'] = cell_deg 
 
-    # Puntos de referencia simétricos en el centro de la grilla
+    # Centered reference pixels
     hdr['CRPIX1'] = (imsize / 2) + 0.5
     hdr['CRPIX2'] = (imsize / 2) + 0.5
 
-    # Guardar el FITS limpio
     fits.writeto("salida_cuadrada.fits", data, hdr, overwrite=True)

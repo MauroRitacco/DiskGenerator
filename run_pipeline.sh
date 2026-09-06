@@ -1,12 +1,10 @@
 #!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Path to the virtual environment python
 PYTHON=".venv/bin/python"
-#Number of samples — only 1495 remaining UV patterns needed to reach 3000 total (0000-2999)
-n=4000
+#Number of samples
+n=2
 #Starting index
 START_ID=0000
 #Image size

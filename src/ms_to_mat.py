@@ -1,7 +1,6 @@
-# Import required tools/tasks
 from casatools import simulator, image, table, coordsys, measures, componentlist, quanta, ctsys
 
-# Workaround for casatasks MatplotlibDeprecationWarning with newer matplotlib versions
+# casatasks needs this shim on newer matplotlib
 import matplotlib.cbook
 if not hasattr(matplotlib.cbook, "MatplotlibDeprecationWarning"):
     matplotlib.cbook.MatplotlibDeprecationWarning = DeprecationWarning
@@ -17,7 +16,6 @@ from astropy.wcs import WCS
 from scipy.io import loadmat
 
 
-# Instantiate all the required tools
 sm = simulator()
 ia = image()
 tb = table()
@@ -27,7 +25,6 @@ qa = quanta()
 cl = componentlist()
 mysu = simutil.simutil()
 
-# Check what columns are in the ms file
 def inspectMsColumns(ms):
     tb.open(ms)
     colnames = tb.colnames()
@@ -46,7 +43,6 @@ def inspectVisibilitiesColumns(ms):
     tb.close()
     print(visibilities.shape)
 
-# Copy visibilities to data
 def copyVisibilitiesToData(ms, mat):
     tb.open(ms, nomodify=False)
     data = tb.getcol('DATA')

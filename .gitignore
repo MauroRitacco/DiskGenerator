@@ -1,9 +1,10 @@
 pipeline/
-pipeline copy/
 zpipeline_3000/
-studies/
+studies/integration_times/
+studies/uv_coverage/
 dataset/
 .venv/
 __pycache__/
 *.pyc
 casa-*.log
+test_dataset_*.log

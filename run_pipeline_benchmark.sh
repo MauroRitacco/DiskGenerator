@@ -1,12 +1,10 @@
 #!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Path to the virtual environment python
 PYTHON=".venv/bin/python"
 #Number of samples
-n=10
+n=2
 #Image size
 img_size=64
 #Path to the output directory
@@ -32,8 +30,7 @@ echo "[2/4] Generating disks..."
 $PYTHON src/disk_generator.py \
     --output_dir ${OUTDIR}/groundtruth \
     --num_samples $n \
-    --img_size $img_size \
-    
+    --img_size $img_size
 # Step 3: Visibility Simulation
 echo "[3/4] Simulating visibilities..."
 $PYTHON src/simulator.py \
@@ -59,13 +56,10 @@ echo "[4/4] Restructuring output directory..."
 for i in $(seq -f "%04g" 0 $((n-1))); do
     TARGET_DIR="${OUTDIR}/disk_${i}"
     mkdir -p "${TARGET_DIR}"
-    
-    # Move the respective files into the target directory
     mv "${OUTDIR}/groundtruth/disk_${i}.fits" "${TARGET_DIR}/"
     mv "${OUTDIR}/measurements_ms/disk_${i}.MS" "${TARGET_DIR}/"
     mv "${OUTDIR}/measurements_mat/disk_${i}.mat" "${TARGET_DIR}/"
     
-    # Move the generated dirty images
     mv "${OUTDIR}/dirty/trainingset_resN1/disk_${i}_res.fits" "${TARGET_DIR}/"
 done
 

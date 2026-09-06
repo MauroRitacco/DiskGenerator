@@ -10,7 +10,6 @@ from math import *
 from scipy.io import loadmat, savemat
 from astropy.io import fits
 
-# Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 RI_OP_DIR = BASE_DIR / "utils" / "ri_measurement_operator"
 sys.path.insert(0, str(RI_OP_DIR))
@@ -22,12 +21,11 @@ from pysrc.utils.gen_imaging_weights import gen_imaging_weights
 
 def log_memory():
     usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    # Linux returns kb, macOS returns bytes. Assuming Linux based on environment.
     print(f"Memory usage: {usage / 1024:.2f} MB")
 
 
 def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(64,64),nufft_pkg='tkbn', iSNR=40):
-    # Define u, v, w, y uv parameters from uv path
+    # Load uvw, frequency, pixel size
     uv = loadmat(uv_path, variable_names=["u", "v", "w", "frequency","nominal_pixelsize"])
 
     u = uv["u"]
@@ -39,12 +37,12 @@ def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(64
     speed_of_light = 299792458
     wavelength = speed_of_light / frequency  # Observation wavelength in meters
 
-    # Convert the uvw coordinates from meters to units of wavelength
+    # meters -> wavelengths
     u /= wavelength
     v /= wavelength
     w /= wavelength
 
-    # Transform data into tensor
+    # Load as tensor
     data= load_data_to_tensor(uv_file_path=uv_path,
                               super_resolution=super_resolution,
                               img_size=img_size,
@@ -55,7 +53,7 @@ def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(64
     data["v"] /= wavelength
     data["w"] /= wavelength
 
-    # Choose nufft package from nufft_pkg variable
+    # NUFFT backend
     match nufft_pkg:
         case "finufft":
             from pysrc.measOperator.meas_op_nufft_pytorch_finufft import MeasOpPytorchFinufft
@@ -70,25 +68,24 @@ def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(64
 
             Operator = MeasOpPynufft
 
-    # Define Operator (has more parameters)
+    # Build measurement operator
     meas_op = Operator(
         u=data["u"],
         v=data["v"],
         img_size=img_size,
     )
 
-    # Define gdth from ground truth images and convert it into tensor
+    # Ground truth as tensor
     gdth=fits.getdata(gdth_path)
     gdth = torch.tensor(gdth.astype(float), dtype=torch.float64).view(1, 1, *gdth.shape)
     
     with torch.no_grad():
         y_clean = meas_op.forward_op(gdth)
 
-        # Input random Gaussian noise
+        # Gaussian noise at target iSNR
         M = y_clean.numel()
-        tau = 10 ** (-iSNR / 20) * torch.linalg.norm(y_clean, dtype=torch.complex128) / sqrt(M)  # Calculate tau
-        noise = (torch.randn(M) + 1j * torch.randn(M)) / sqrt(2)  # Random Gaussian noise with std tau and mean 0
-        # Define y as y clean plus noise
+        tau = 10 ** (-iSNR / 20) * torch.linalg.norm(y_clean, dtype=torch.complex128) / sqrt(M)
+        noise = (torch.randn(M) + 1j * torch.randn(M)) / sqrt(2)  # complex normal, unit std
         y = y_clean + noise
 
     # Save visibilities
@@ -104,7 +101,7 @@ def simulator(uv_path,gdth_path,measurement_path,super_resolution=1,img_size=(64
         "nominal_pixelsize": image_pixel_size,
     })
     
-    # Explicit garbage flushing inside the function scope
+    # free memory
     del meas_op, data, gdth, y_clean, y, noise, u, v, w, nW
     gc.collect()
 
@@ -125,7 +122,7 @@ if __name__ == "__main__":
     out_dir = Path(args.out_dir)
     os.makedirs(out_dir, exist_ok=True)
 
-    # Run the simulator for all the files in the respective folders
+    # Run over all uv patterns
     uv_files = sorted(uv_dir.glob("uv_*.mat"))
     for uv_file in uv_files:
         # Extract index from filename, e.g., "uv_1234.mat" -> 1234
@@ -157,7 +154,7 @@ if __name__ == "__main__":
                       nufft_pkg=args.nufft_pkg,
                       iSNR=args.isnr)
         
-        # Explicit garbage collection to prevent memory leaks
+        # free memory
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()

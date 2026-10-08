@@ -1,7 +1,7 @@
 # DiskGenerator
 
 Synthetic data generator for radio-interferometric image reconstruction of
-protoplanetary disks. It simulates the full observation pipeline of a VLA-like
+protoplanetary disks. It simulates the full observation pipeline of a ALMA-like
 interferometer on parametric disk models: UV coverages as CASA Measurement Sets,
 complex visibilities computed with a NUFFT measurement operator plus Gaussian
 noise, and the dirty images a real instrument would return. Output is paired

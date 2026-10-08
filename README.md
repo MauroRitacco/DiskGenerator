@@ -29,8 +29,6 @@ to feed the companion benchmark ([RI-Benchmark](https://github.com/MauroRitacco/
   modification (`--pixelsize` in `sim_vla_ms.py`) makes the field of view
   explicit.
 - `studies/sweep_experiment/` — sweep/test dataset generators and validators.
-- `studies/uv_coverage/`, `studies/integration_times/` — antenna-count and
-  integration-time studies.
 - `run_pipeline*.sh` — end-to-end pipelines (training, validation, benchmark layout).
 - `config.yaml` — measurement-operator settings (NUFFT backend, Briggs weighting).
 
@@ -51,13 +49,9 @@ pip install -r requirements.txt
 ./studies/sweep_experiment/run_pipeline_sweep.sh test        # held-out test set
 ```
 
-Each stage in `src/` can also be run standalone (e.g. `simulator.py --isnr 40`);
-see `--help` per module.
-
 ## Data
 
-Generated data goes to `pipeline/` or `dataset/` and is not tracked (size).
-CASA logs in the repository root are artifacts of local runs.
+Generated data goes to `pipeline/` or `dataset/`.
 
 ## License
 

@@ -2,6 +2,9 @@ pipeline/
 zpipeline_3000/
 studies/integration_times/
 studies/uv_coverage/
+studies/faint_disks/disks/
+studies/faint_disks/verification/
+studies/sweep_experiment/run_pipeline_sweep_testcell.sh
 dataset/
 .venv/
 __pycache__/

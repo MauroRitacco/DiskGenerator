@@ -3,7 +3,7 @@ Synthetic Protoplanetary Disk Generator
 ---------------------------------------
 Characteristics:
 1. Outputs FITS files (default 512x512) normalized [0,1] with header metadata.
-2. Generates 1-5 gaussian rings with power-law decay and random spatial offsets.
+2. Generates 1-4 gaussian rings with power-law decay and random spatial offsets.
 3. Simulates a faint point source (planets/background).
 4. Normalizes the disk structure first.
 5. Adds a central star (50% probability) after normalization to avoid disks overlapping being brighter.
@@ -35,7 +35,7 @@ def generate_disk(output_dir, num_samples=50, img_size=512, start_id=0, generate
     R_REF_FRAC = 0.06                      # x img_size
 
     # --- Ring structure ---
-    NUM_RINGS_RANGE = (1, 5)               # min/max number of rings
+    NUM_RINGS_RANGE = (1, 4)               # min/max number of rings
     RING_SIGMA_MIN_FRAC = 12.0 / 512.0     # ring sigma, lower
     RING_SIGMA_MAX_FRAC = 21.0 / 512.0     # ring sigma, upper
     RING_R_MIN_FRAC = 0.05                 # innermost ring radius
